@@ -1,0 +1,51 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install buildozer
+
+    - name: Prepare buildozer.spec
+      run: |
+        buildozer init
+        echo "[app]" > buildozer.spec
+        echo "title = IKISKY VPN" >> buildozer.spec
+        echo "package.name = ikiskyvpn" >> buildozer.spec
+        echo "package.domain = com.ikisky" >> buildozer.spec
+        echo "source.dir = ." >> buildozer.spec
+        echo "source.include_exts = py,png,jpg,kv,mp4,json" >> buildozer.spec
+        echo "version = 0.1" >> buildozer.spec
+        echo "requirements = python3,kivy==2.0.0,android,plyer" >> buildozer.spec
+        echo "log_level = 2" >> buildozer.spec
+        echo "android.add_assets = z-f.mp4:." >> buildozer.spec
+        echo "android.add_assets = flags/*.png:flags/" >> buildozer.spec
+        cat buildozer.spec
+
+    - name: Build APK
+      run: |
+        buildozer android debug
+
+    - name: Upload APK
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: IKISKY-VPN-APK
+        path: bin/*.apk
